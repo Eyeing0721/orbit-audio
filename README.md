@@ -23,6 +23,7 @@ ORBIT 是一款使用 Flutter 编写的本地双耳空间音频编辑器，目�
 - [工作流概览](#工作流概览)
 - [运行环境与外部依赖说明](#运行环境与外部依赖说明)
 - [获取与启动](#获取与启动)
+- [AI Skill 安装](#ai-skill-安装)
 - [已知限制与边界说明](#已知限制与边界说明)
 - [文档导航](#文档导航)
 - [许可证与第三方资源核验说明](#许可证与第三方资源核验说明)
@@ -140,6 +141,44 @@ Demucs 模型权重首次分轨时按需下载，不包含在便携包内。默�
 源码构建已验证工具链为 Flutter 3.47.9 / Dart 3.13.7 与 Visual Studio 2022 的“使用 C++ 的桌面开发”工作负载。准备好工具链后，在源码根目录运行 `flutter pub get`，再执行 `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\build_release.ps1 -Flutter flutter -Destination .\dist\ORBIT`。需要先按上文准备 Python 引擎；音频依赖不由 Flutter 打包。
 
 首次启动 ORBIT 时，程序会播放开屏动画、展示操作引导，并自动创建一个空工程，你可以直接开始熟悉界面。
+
+---
+
+## AI Skill 安装
+
+仓库提供 [ORBIT Audio skill](skills/orbit-audio/SKILL.md)，让 AI 通过 ORBIT 的命令行或本地 HTTP API 完成分轨、声音对象摆位、节点处理、关键帧与音频导出，不需要控制桌面。当前按 ORBIT `0.7.1` 核对。
+
+**Skill 不包含 ORBIT 软件、Python 音频依赖、FFmpeg 或分轨模型**；请先按上方说明准备软件与引擎。
+
+### 命令行安装到 Codex
+
+安装 Node.js `22.20.0` 或更高版本后运行：
+
+```powershell
+npx skills add Eyeing0721/orbit-audio --skill orbit-audio -a codex -g
+```
+
+这里使用社区维护的 [Skills CLI](https://github.com/vercel-labs/skills)，不是 ORBIT 或 OpenAI 的官方安装器。`-g` 表示对当前用户的所有项目可用；去掉 `-g` 则仅安装到当前项目。安装前请检查技能内容与安装器的权限提示，不要盲目覆盖已有同名技能。
+
+### 通过 Codex 安装
+
+不想使用上述社区安装器时，也可以在 Codex 中发送：
+
+```text
+$skill-installer 从 https://github.com/Eyeing0721/orbit-audio 安装 skills/orbit-audio 目录中的技能
+```
+
+Codex 的安装与发现机制见 [官方技能文档](https://learn.chatgpt.com/docs/build-skills#install-curated-skills-for-local-use)。安装后在下一轮对话调用；如果没有出现，重启 Codex。
+
+### 使用
+
+告诉 AI 实际的 ORBIT 安装或源码目录，或在启动 AI 的环境中配置 `ORBIT_HOME` 指向该目录，再发送例如：
+
+```text
+$orbit-audio 用 ORBIT 处理我指定的音频：人声从远处靠近正前方，伴奏放在两侧后方。先渲染短段检查，再导出 FLAC 和单文件工程，保留原文件。
+```
+
+Skill 的包装器只调用 ORBIT 自身引擎，不实现另一套音频处理；CLI/API 编辑的是磁盘工程，不能读取界面中尚未保存的修改。请勿让界面与自动化同时编辑同一工程。
 
 ---
 

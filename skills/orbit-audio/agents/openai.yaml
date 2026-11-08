@@ -1,0 +1,4 @@
+interface:
+  display_name: "ORBIT Audio"
+  short_description: "Create spatial audio with the ORBIT CLI and API"
+  default_prompt: "Use $orbit-audio to create and verify spatial audio through ORBIT, preserving the source files."
