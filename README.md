@@ -4,6 +4,7 @@
 [![Windows x64](https://img.shields.io/badge/Windows-x64-697d9c?style=flat-square)](https://github.com/Eyeing0721/orbit-audio/releases)
 [![Flutter](https://img.shields.io/badge/Flutter-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flutter.dev/)
 [![License](https://img.shields.io/github/license/Eyeing0721/orbit-audio?style=flat-square&color=81b29a)](LICENSE)
+[![Website](https://img.shields.io/badge/Website-ORBIT-b5c9ff?style=flat-square)](https://orbit-audio.pages.dev/)
 
 > **首次公开发布 · 初版**（具体版本号：`0.7.1`）
 
