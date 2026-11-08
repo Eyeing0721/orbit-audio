@@ -1,0 +1,273 @@
+usage: orbit [-h] [--version]
+             {doctor,inspect,analyze,run,render,separate,project,serve} ...
+
+ORBIT local spatial audio CLI / HTTP API. No desktop control.
+
+positional arguments:
+  {doctor,inspect,analyze,run,render,separate,project,serve}
+    doctor              Check local engine dependencies (no model downloads)
+    inspect             Decode audio and report duration / waveform
+    analyze             Measured source/clip/node STFT and spectrum for an
+                        object in a saved project
+    run                 Execute one JSON request, using the same schema as the
+                        API
+    render              Render a saved project to headphone binaural stereo
+    separate            Demucs separation into a NEW output directory
+    project             Portable .orbit projects, objects and animation
+    serve               Start token-authenticated HTTP API on 127.0.0.1 only
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+
+usage: orbit doctor [-h]
+
+options:
+  -h, --help  show this help message and exit
+
+usage: orbit inspect [-h] path
+
+positional arguments:
+  path
+
+options:
+  -h, --help  show this help message and exit
+
+usage: orbit analyze [-h] [--object-id OBJECTID] [--start START]
+                     [--seconds SECONDS] [--channel {mono,left,right}] [--raw]
+                     path
+
+positional arguments:
+  path
+
+options:
+  -h, --help            show this help message and exit
+  --object-id OBJECTID
+  --start START
+  --seconds SECONDS
+  --channel {mono,left,right}
+  --raw                 Analyze original source before clip edits/nodes
+
+usage: orbit run [-h] request
+
+positional arguments:
+  request     UTF-8 JSON file, or - to read stdin
+
+options:
+  -h, --help  show this help message and exit
+
+usage: orbit render [-h]
+                    [--format {wav24,wav32,flac,aiff,caf,w64,mp3,aac,alac,opus,vorbis}]
+                    [--start START] [--seconds SECONDS] [--overwrite]
+                    path output
+
+positional arguments:
+  path
+  output
+
+options:
+  -h, --help            show this help message and exit
+  --format {wav24,wav32,flac,aiff,caf,w64,mp3,aac,alac,opus,vorbis}
+  --start START
+  --seconds SECONDS
+  --overwrite
+
+usage: orbit separate [-h] [--model {htdemucs_6s,htdemucs_ft,htdemucs}]
+                      [--parts PARTS [PARTS ...]] [--device {auto,cpu}]
+                      [--shifts SHIFTS]
+                      path output
+
+positional arguments:
+  path
+  output
+
+options:
+  -h, --help            show this help message and exit
+  --model {htdemucs_6s,htdemucs_ft,htdemucs}
+  --parts PARTS [PARTS ...]
+  --device {auto,cpu}
+  --shifts SHIFTS
+
+usage: orbit project [-h]
+                     {new,info,edit,add,set,duplicate,unlink,remove,key,delete-key}
+                     ...
+
+positional arguments:
+  {new,info,edit,add,set,duplicate,unlink,remove,key,delete-key}
+    new                 Create an empty portable project
+    info                Read scene metadata, object IDs and SHA-256 revision
+
+options:
+  -h, --help            show this help message and exit
+
+usage: orbit project new [-h] [--name NAME] [--duration DURATION]
+                         [--overwrite]
+                         output
+
+positional arguments:
+  output
+
+options:
+  -h, --help           show this help message and exit
+  --name NAME
+  --duration DURATION
+  --overwrite
+
+usage: orbit project info [-h] path
+
+positional arguments:
+  path
+
+options:
+  -h, --help  show this help message and exit
+
+usage: orbit project edit [-h] [--output OUTPUT] [--overwrite]
+                          [--if-revision IF_REVISION] --operations OPERATIONS
+                          path
+
+positional arguments:
+  path
+
+options:
+  -h, --help            show this help message and exit
+  --output OUTPUT       Save as another .orbit (otherwise edit in place)
+  --overwrite
+  --if-revision IF_REVISION
+                        Reject the edit if the input changed
+  --operations OPERATIONS
+                        JSON file containing an edit array
+
+usage: orbit project add [-h] [--output OUTPUT] [--overwrite]
+                         [--if-revision IF_REVISION]
+                         (--audio AUDIO | --generator {rain,wind,ocean,white,pink})
+                         [--values VALUES]
+                         path
+
+positional arguments:
+  path
+
+options:
+  -h, --help            show this help message and exit
+  --output OUTPUT       Save as another .orbit (otherwise edit in place)
+  --overwrite
+  --if-revision IF_REVISION
+                        Reject the edit if the input changed
+  --audio AUDIO         Audio file to inspect and embed
+  --generator {rain,wind,ocean,white,pink}
+  --values VALUES       Additional object fields as JSON
+
+usage: orbit project set [-h] [--output OUTPUT] [--overwrite]
+                         [--if-revision IF_REVISION] --values VALUES
+                         path id
+
+positional arguments:
+  path
+  id                    Object ID from project info/add
+
+options:
+  -h, --help            show this help message and exit
+  --output OUTPUT       Save as another .orbit (otherwise edit in place)
+  --overwrite
+  --if-revision IF_REVISION
+                        Reject the edit if the input changed
+  --values VALUES       JSON object, e.g. {"reverb":0.7}
+
+usage: orbit project duplicate [-h] [--output OUTPUT] [--overwrite]
+                               [--if-revision IF_REVISION] [--linked]
+                               [--at X Y Z]
+                               path id
+
+positional arguments:
+  path
+  id                    Object ID from project info/add
+
+options:
+  -h, --help            show this help message and exit
+  --output OUTPUT       Save as another .orbit (otherwise edit in place)
+  --overwrite
+  --if-revision IF_REVISION
+                        Reject the edit if the input changed
+  --linked              Share audio/effects, keep XYZ independent
+  --at X Y Z            Translate base XYZ and position curves
+
+usage: orbit project unlink [-h] [--output OUTPUT] [--overwrite]
+                            [--if-revision IF_REVISION]
+                            path id
+
+positional arguments:
+  path
+  id                    Object ID from project info/add
+
+options:
+  -h, --help            show this help message and exit
+  --output OUTPUT       Save as another .orbit (otherwise edit in place)
+  --overwrite
+  --if-revision IF_REVISION
+                        Reject the edit if the input changed
+
+usage: orbit project remove [-h] [--output OUTPUT] [--overwrite]
+                            [--if-revision IF_REVISION]
+                            path id
+
+positional arguments:
+  path
+  id                    Object ID from project info/add
+
+options:
+  -h, --help            show this help message and exit
+  --output OUTPUT       Save as another .orbit (otherwise edit in place)
+  --overwrite
+  --if-revision IF_REVISION
+                        Reject the edit if the input changed
+
+usage: orbit project key [-h] [--output OUTPUT] [--overwrite]
+                         [--if-revision IF_REVISION] --values VALUES --time
+                         TIME [--interpolation {smooth,linear,step,bezier}]
+                         path id
+
+positional arguments:
+  path
+  id                    Object ID from project info/add
+
+options:
+  -h, --help            show this help message and exit
+  --output OUTPUT       Save as another .orbit (otherwise edit in place)
+  --overwrite
+  --if-revision IF_REVISION
+                        Reject the edit if the input changed
+  --values VALUES       JSON object, e.g. {"reverb":0.7}
+  --time TIME
+  --interpolation {smooth,linear,step,bezier}
+
+usage: orbit project delete-key [-h] [--output OUTPUT] [--overwrite]
+                                [--if-revision IF_REVISION] --time TIME
+                                [--fields FIELDS [FIELDS ...]]
+                                path id
+
+positional arguments:
+  path
+  id                    Object ID from project info/add
+
+options:
+  -h, --help            show this help message and exit
+  --output OUTPUT       Save as another .orbit (otherwise edit in place)
+  --overwrite
+  --if-revision IF_REVISION
+                        Reject the edit if the input changed
+  --time TIME
+  --fields FIELDS [FIELDS ...]
+                        Channels to delete; omitted means whole frame
+
+usage: orbit serve [-h] --workspace WORKSPACE [--port PORT]
+                   [--token-file TOKEN_FILE]
+                   [--max-render-seconds MAX_RENDER_SECONDS]
+
+options:
+  -h, --help            show this help message and exit
+  --workspace WORKSPACE
+                        Existing directory; all API files stay inside it
+  --port PORT           0 asks the OS to choose a free port
+  --token-file TOKEN_FILE
+                        Private file containing at least 32 characters;
+                        created if missing
+  --max-render-seconds MAX_RENDER_SECONDS

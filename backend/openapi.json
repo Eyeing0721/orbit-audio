@@ -1,0 +1,74 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ORBIT Local Automation API",
+    "version": "0.7.1",
+    "description": "Opt-in loopback API. All routes require Bearer auth; browser Origin headers are rejected. Paths resolve inside the selected workspace, including symlinks. Audio processing/mutations use a serial bounded job queue. This controls saved projects, not the live GUI. No Dolby Atmos encoding."
+  },
+  "servers": [{"url": "http://127.0.0.1:8765"}],
+  "security": [{"bearerAuth": []}],
+  "paths": {
+    "/v1/health": {"get": {"summary": "Service status and workspace", "responses": {"200": {"$ref": "#/components/responses/Success"}, "default": {"$ref": "#/components/responses/Error"}}}},
+    "/v1/capabilities": {"get": {"summary": "Actions, formats, generators and animation channels", "responses": {"200": {"$ref": "#/components/responses/Success"}, "default": {"$ref": "#/components/responses/Error"}}}},
+    "/v1/openapi.json": {"get": {"summary": "This OpenAPI document (not wrapped in an envelope)", "responses": {"200": {"description": "OpenAPI 3.1 JSON", "content": {"application/json": {"schema": {"type": "object"}}}}, "default": {"$ref": "#/components/responses/Error"}}}},
+    "/v1/execute": {"post": {
+      "summary": "Synchronous doctor or project.read only",
+      "requestBody": {"required": true, "content": {"application/json": {"schema": {"oneOf": [{"$ref": "#/components/schemas/Doctor"}, {"$ref": "#/components/schemas/Read"}]}}}},
+      "responses": {"200": {"$ref": "#/components/responses/Success"}, "default": {"$ref": "#/components/responses/Error"}}
+    }},
+    "/v1/jobs": {
+      "get": {"summary": "List up to 128 retained jobs (in memory only)", "responses": {"200": {"$ref": "#/components/responses/Success"}, "default": {"$ref": "#/components/responses/Error"}}},
+      "post": {
+        "summary": "Submit processing/editing job (one worker, max 16 pending/running)",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"oneOf": [{"$ref": "#/components/schemas/Inspect"}, {"$ref": "#/components/schemas/Analyze"}, {"$ref": "#/components/schemas/Create"}, {"$ref": "#/components/schemas/Edit"}, {"$ref": "#/components/schemas/Render"}, {"$ref": "#/components/schemas/Separate"}]}}}},
+        "responses": {"202": {"description": "Queued; poll the Location URL. Validation/DSP errors appear as job.state=failed.", "headers": {"Location": {"schema": {"type": "string"}}}, "content": {"application/json": {"schema": {"type": "object", "properties": {"ok": {"const": true}, "data": {"$ref": "#/components/schemas/Job"}}}}}}, "default": {"$ref": "#/components/responses/Error"}}
+      }
+    },
+    "/v1/jobs/{id}": {
+      "parameters": [{"name": "id", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9a-f]{32}$"}}],
+      "get": {"summary": "Query state, progress, result or error", "responses": {"200": {"$ref": "#/components/responses/Success"}, "default": {"$ref": "#/components/responses/Error"}}},
+      "delete": {"summary": "Cancel queued/running job and terminate its worker/descendants", "description": "Terminal jobs are unchanged. Cancellation is not an undo: output already published immediately before cancellation may exist. Completed outputs and source files are not deleted.", "responses": {"200": {"$ref": "#/components/responses/Success"}, "default": {"$ref": "#/components/responses/Error"}}}
+    }
+  },
+  "components": {
+    "securitySchemes": {"bearerAuth": {"type": "http", "scheme": "bearer"}},
+    "responses": {
+      "Success": {"description": "Success", "content": {"application/json": {"schema": {"type": "object", "required": ["ok", "data"], "properties": {"ok": {"const": true}, "data": {}}}}}},
+      "Error": {"description": "JSON error. Common HTTP statuses: 400 invalid request, 401 missing/wrong token, 403 Host/Origin/path rejected, 404 missing route/file, 409 output/revision conflict, 411 missing length, 413 body over 1 MiB, 415 not JSON, 428 revision required, 429 full queue.", "content": {"application/json": {"schema": {"type": "object", "properties": {"ok": {"const": false}, "error": {"type": "object", "required": ["code", "message"], "properties": {"code": {"type": "string"}, "message": {"type": "string"}}}}}}}}
+    },
+    "schemas": {
+      "Analyze": {
+        "type": "object", "additionalProperties": false, "required": ["action", "path"],
+        "description": "Source-level analysis of an object in a saved project. Job result follows Analysis. Excludes object-level FX/automation, HRTF and master bus. Does not analyze a live output bus.",
+        "properties": {"action": {"const": "analyze"}, "path": {"type": "string"}, "objectId": {"type": "string", "description": "Omit to select the first object"}, "start": {"type": "number", "minimum": 0, "default": 0}, "seconds": {"type": "number", "minimum": 0.05, "maximum": 30, "default": 12}, "processed": {"type": "boolean", "default": true, "description": "Apply clip edits and node graph before analysis"}, "channel": {"enum": ["mono", "left", "right"], "default": "mono"}}
+      },
+      "Analysis": {"type": "object", "properties": {"width": {"type": "integer", "maximum": 512}, "height": {"const": 192}, "pixels": {"type": "string", "contentEncoding": "base64", "description": "Row-major uint8; rows low-to-high frequency; columns time. 0..255 maps to -100..0 dBFS (clipped)."}, "frequencies": {"type": "array", "items": {"type": "number"}, "description": "Log-spaced 40..20000 Hz"}, "spectrumDb": {"type": "array", "items": {"type": "number"}}, "waveform": {"type": "array", "items": {"type": "number"}}, "peakDb": {"type": "number"}, "rmsDb": {"type": "number"}, "duration": {"type": "number"}, "seconds": {"type": "number"}, "start": {"type": "number"}, "sampleRate": {"const": 48000}, "channel": {"enum": ["mono", "left", "right"]}, "processed": {"type": "boolean"}}},
+      "Clip": {"type": "object", "additionalProperties": false, "properties": {"trimStart": {"type": "number", "minimum": 0, "maximum": 86400, "default": 0}, "trimEnd": {"type": "number", "minimum": 0, "maximum": 86400, "default": 0, "description": "0 means original source end; otherwise must exceed trimStart"}, "fadeIn": {"type": "number", "minimum": 0, "maximum": 30, "default": 0}, "fadeOut": {"type": "number", "minimum": 0, "maximum": 30, "default": 0}, "speed": {"type": "number", "minimum": 0.25, "maximum": 4, "default": 1, "description": "Playback rate changes pitch too; not pitch-preserving stretch"}, "reverse": {"type": "boolean", "default": false}, "invert": {"type": "boolean", "default": false}, "normalize": {"type": "boolean", "default": false}, "targetPeak": {"type": "number", "minimum": -24, "maximum": 0, "default": -1}}},
+      "NodeGraph": {"type": "object", "additionalProperties": false, "required": ["enabled", "nodes", "edges"], "description": "Acyclic graph. Duck KEY detects only. Environment/file have no input. Audible HRTF replaces final object spatialization. Static parameters. File/convolution assetPath is embedded and confined to API workspace.", "properties": {"enabled": {"type": "boolean"}, "nodes": {"type": "array", "minItems": 2, "maxItems": 64, "items": {"type": "object", "additionalProperties": false, "required": ["id", "type"], "properties": {"id": {"type": "string", "minLength": 1, "maxLength": 128}, "type": {"enum": ["input", "output", "gain", "filter", "eq", "compressor", "gate", "echo", "reverb", "distortion", "mix", "hrtf", "chorus", "microshift", "diffuser", "convolution", "environment", "file", "duck"]}, "x": {"type": "number"}, "y": {"type": "number"}, "bypass": {"type": "boolean", "default": false}, "assetPath": {"type": "string", "maxLength": 4096}, "params": {"type": "object", "additionalProperties": {"type": "number"}}}}}, "edges": {"type": "array", "maxItems": 128, "items": {"type": "object", "required": ["from", "to"], "additionalProperties": false, "properties": {"from": {"type": "string"}, "to": {"type": "string"}, "port": {"enum": ["in", "a", "b", "key"], "default": "in"}}}}}},
+      "Doctor": {"type": "object", "additionalProperties": false, "required": ["action"], "properties": {"action": {"const": "doctor"}}},
+      "Read": {"type": "object", "additionalProperties": false, "required": ["action", "path"], "properties": {"action": {"const": "project.read"}, "path": {"type": "string"}}},
+      "Inspect": {"type": "object", "additionalProperties": false, "required": ["action", "path"], "properties": {"action": {"const": "inspect"}, "path": {"type": "string"}}},
+      "Create": {
+        "type": "object", "additionalProperties": false, "required": ["action", "output"],
+        "properties": {"action": {"const": "project.create"}, "output": {"type": "string"}, "name": {"type": "string"}, "duration": {"type": "number", "minimum": 0.001, "maximum": 86400}, "overwrite": {"type": "boolean", "default": false}, "scene": {"type": "object", "description": "Optional full GUI schemaVersion=2 scene. When present overrides name/duration. Media paths must be workspace-local. Use saved .orbit input for portable render/edit."}}
+      },
+      "Edit": {
+        "type": "object", "additionalProperties": false, "required": ["action", "path", "operations"],
+        "properties": {"action": {"const": "project.edit"}, "path": {"type": "string"}, "output": {"type": "string", "description": "Optional .orbit save-as path; otherwise input is replaced"}, "overwrite": {"type": "boolean", "default": false}, "ifRevision": {"type": "string", "description": "SHA-256 from project.read; required for in-place API edits"}, "operations": {"type": "array", "minItems": 1, "maxItems": 1000, "items": {"$ref": "#/components/schemas/EditOperation"}}}
+      },
+      "EditOperation": {
+        "type": "object", "additionalProperties": false, "required": ["op"],
+        "properties": {"op": {"enum": ["project", "add", "set", "duplicate", "unlink", "remove", "keyframe", "keyframe.remove"]}, "id": {"type": "string", "description": "Existing object ID except project/add"}, "values": {"type": "object", "description": "project: scene settings; add/set: flattened SoundObject fields; duplicate: name/XYZ; keyframe: channel values and field.inT/inV/outT/outV handles. See AUTOMATION.md."}, "linked": {"type": "boolean", "default": false}, "time": {"type": "number", "minimum": 0, "maximum": 86400}, "fields": {"type": "array", "items": {"enum": ["x", "y", "z", "gain", "spread", "reverb", "echo", "distortion"]}}, "interpolation": {"enum": ["smooth", "linear", "step", "bezier"]}}
+      },
+      "Render": {
+        "type": "object", "additionalProperties": false, "required": ["action", "path", "output"],
+        "properties": {"action": {"const": "render"}, "path": {"type": "string"}, "output": {"type": "string", "description": "Extension must match format; cannot replace input project/media"}, "format": {"enum": ["wav24", "wav32", "flac", "aiff", "caf", "w64", "mp3", "aac", "alac", "opus", "vorbis"], "default": "wav24"}, "start": {"type": "number", "minimum": 0, "default": 0}, "seconds": {"type": "number", "exclusiveMinimum": 0, "description": "Optional output duration cap, including tail. API absolute span defaults to <=600s."}, "overwrite": {"type": "boolean", "default": false}}
+      },
+      "Separate": {
+        "type": "object", "additionalProperties": false, "required": ["action", "path", "output"],
+        "properties": {"action": {"const": "separate"}, "path": {"type": "string"}, "output": {"type": "string", "description": "NEW directory. Original model-relative subfolders are preserved."}, "model": {"enum": ["htdemucs_6s", "htdemucs_ft", "htdemucs"], "default": "htdemucs_6s"}, "parts": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["vocals", "drums", "bass", "other", "guitar", "piano", "instrumental"]}}, "device": {"enum": ["auto", "cpu"], "default": "auto"}, "shifts": {"type": "integer", "minimum": 0, "maximum": 10, "default": 1}, "overwrite": {"const": false}}
+      },
+      "Job": {"type": "object", "required": ["id", "action", "state", "progress"], "properties": {"id": {"type": "string"}, "action": {"type": "string"}, "state": {"enum": ["queued", "running", "cancelling", "succeeded", "failed", "cancelled"]}, "progress": {"type": "number", "minimum": 0, "maximum": 1}, "message": {"type": "string"}, "createdAt": {"type": "number"}, "startedAt": {"type": "number"}, "finishedAt": {"type": "number"}, "result": {}, "error": {"type": "object"}}}
+    }
+  }
+}
