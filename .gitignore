@@ -76,3 +76,9 @@ __pycache__/
 .env.*
 *.pem
 *.key
+
+# Official website: generated assets, dependencies and local QA.
+/website/dist/
+/website/node_modules/
+/website/.wrangler/
+/website/.qa/

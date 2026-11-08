@@ -1,0 +1,19 @@
+{
+  "name": "orbit-audio-website",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "dev": "node scripts/serve.mjs",
+    "test": "node scripts/qa.mjs",
+    "deploy": "wrangler pages deploy dist --project-name orbit-audio --branch main"
+  },
+  "devDependencies": {
+    "playwright": "1.65.0",
+    "wrangler": "4.158.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
