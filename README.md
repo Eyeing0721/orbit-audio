@@ -1,5 +1,10 @@
 # ORBIT (`orbit-audio`)
 
+[![Release](https://img.shields.io/github/v/release/Eyeing0721/orbit-audio?include_prereleases&style=flat-square&color=8ab4f8)](https://github.com/Eyeing0721/orbit-audio/releases)
+[![Windows x64](https://img.shields.io/badge/Windows-x64-697d9c?style=flat-square)](https://github.com/Eyeing0721/orbit-audio/releases)
+[![Flutter](https://img.shields.io/badge/Flutter-02569B?style=flat-square&logo=flutter&logoColor=white)](https://flutter.dev/)
+[![License](https://img.shields.io/github/license/Eyeing0721/orbit-audio?style=flat-square&color=81b29a)](LICENSE)
+
 > **首次公开发布 · 初版**（具体版本号：`0.7.1`）
 
 你好呀，欢迎来到 **ORBIT**！
